@@ -1,0 +1,12 @@
+@page "/logout"
+@using tecnologyApp.Services
+@inject IUserService UserService
+@inject NavigationManager Navigation
+
+@code {
+    protected override void OnInitialized()
+    {
+        UserService.Logout();
+        Navigation.NavigateTo("/"); 
+    }
+}

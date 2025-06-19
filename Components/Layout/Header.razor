@@ -1,0 +1,109 @@
+@using tecnologyApp.Services
+@inject IUserService UserService
+
+
+<header class="header"> 
+    <div class="container"> 
+        <div class="header-content"> 
+            <div class="logo-container"> 
+                <img src="images/log.jpg" alt="Techstore Logo" class="logo-image" /> 
+                <div class="logo-text"> 
+                    <h1 class="main-title">TECHSTORE</h1> 
+                    <p class="subtitle">Technology & Innovation</p> 
+                    <div class="underline"></div> 
+                </div>
+            </div> 
+            <nav class="navigation"> 
+                <a href="/" class="nav-link @(IsActive("/") ? "active" : "")">HOME</a> 
+                <a href="/products" class="nav-link @(IsActive("/products") ? "active" : "")">PRODUCTS</a> 
+                
+                @if (UserService.CurrentUser != null)
+                {
+                    <div class="user-dropdown">
+                        <a href="/dashboard" class="nav-link user-welcome @(IsActive("/dashboard") ? "active" : "")">
+                            <i class="fas fa-user-circle"></i> @UserService.CurrentUser.Username
+                        </a>
+                        <div class="dropdown-content">
+                            <a href="/dashboard">My Dashboard</a>
+                            @if (UserService.CurrentUser.Role == "Seller")
+                            {
+                                <a href="/myproducts">My Products</a>
+                            }
+                            <a href="/logout">Logout</a>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <a href="/login" class="nav-link @(IsActive("/login") ? "active" : "")">LOGIN</a> 
+                }
+            </nav> 
+        </div> 
+    </div>
+</header>
+
+<style>
+    .user-welcome {
+        color: #f3f3f3;
+        font-weight: bold;
+        margin-right: 15px;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .user-welcome:hover {
+        color: #45a049;
+        text-decoration: none;
+    }
+
+    .user-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        right: 0;
+        background-color: #f9f9f9;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        z-index: 1;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .dropdown-content a {
+        color: #333;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+        text-align: left;
+        font-size: 0.9rem;
+    }
+
+    .dropdown-content a:hover {
+        background-color: #f1f1f1;
+    }
+
+    .user-dropdown:hover .dropdown-content {
+        display: block;
+    }
+
+    .fa-user-circle {
+        font-size: 1.2rem;
+    }
+</style>
+
+@code { 
+    [Inject] private NavigationManager Navigation { get; set; } = default!; 
+
+    private bool IsActive(string path) 
+    { 
+        var currentPath = Navigation.ToBaseRelativePath(Navigation.Uri); 
+        return currentPath.Equals(path.TrimStart('/'), StringComparison.OrdinalIgnoreCase) || 
+               (path == "/" && string.IsNullOrEmpty(currentPath)); 
+    }
+}

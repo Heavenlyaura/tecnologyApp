@@ -1,0 +1,49 @@
+@page "/register"
+@using tecnologyApp.Services
+@using tecnologyApp.Data
+@inject tecnologyApp.Services.IUserService UserService
+@inject NavigationManager Navigation
+
+<PageTitle>Register</PageTitle>
+
+<Header />
+
+<h3>Register</h3>
+
+<EditForm Model="registerModel" OnValidSubmit="HandleRegister">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div>
+        <label>Username:</label>
+        <InputText @bind-Value="registerModel.Username" class="form-control" />
+    </div>
+    <div>
+        <label>Password:</label>
+        <InputText @bind-Value="registerModel.Password" type="password" class="form-control" />
+    </div>
+    <div>
+        <label>Role:</label>
+        <InputSelect @bind-Value="registerModel.Role" class="form-control">
+            <option value="Buyer">Buyer</option>
+            <option value="Seller">Seller</option>
+        </InputSelect>
+    </div>
+
+    <button type="submit" class="btn btn-success">Register</button>
+</EditForm>
+
+<Footer />
+
+@code {
+    private RegisterModel registerModel = new();
+
+    private async Task HandleRegister()
+    {
+        var result = await UserService.RegisterAsync(registerModel);
+        if (result.Success)
+        {
+            Navigation.NavigateTo("/login");
+        }
+    }
+}

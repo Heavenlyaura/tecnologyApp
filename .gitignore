@@ -1,0 +1,46 @@
+# .gitignore for ASP.NET Core / Blazor projects
+
+# Build results
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Visual Studio Code
+.vscode/
+
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite
+
+# Publish output
+wwwroot/dist/
+
+# Secrets
+appsettings.*.local.json
+secrets.json
+
+# Rider
+.idea/
+
+# Others
+project.lock.json
+project.fragment.lock.json
+
+# NuGet
+*.nupkg
+# Packages folder can be ignored if using PackageReference
+packages/
+# NuGet v3's project.json files produces this folder
+.nuget/

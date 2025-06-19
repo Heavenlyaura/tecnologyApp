@@ -1,0 +1,321 @@
+@page "/dashboard"
+@inject tecnologyApp.Services.IUserService UserService
+@inject tecnologyApp.Services.IProductService ProductService
+@inject NavigationManager Navigation
+@using tecnologyApp.Data
+
+@using ProductModel = tecnologyApp.Data.Product
+@using Microsoft.AspNetCore.Components.Forms
+
+<PageTitle>Dashboard</PageTitle>
+<Header />
+
+@if (UserService.CurrentUser is null)
+{
+    <div class="not-authenticated">
+        <p>You are not authenticated.</p>
+        <a href="/login" class="btn btn-primary">Go to Login</a>
+    </div>
+}
+else if (UserService.CurrentUser!.Role == "Seller")
+{
+    <div class="seller-dashboard">
+        <h3>Welcome, @UserService.CurrentUser.Username (Seller)</h3>
+        
+        <div class="add-product-form">
+            <h4>Add New Product</h4>
+            <EditForm Model="newProduct" OnValidSubmit="AddProduct" enctype="multipart/form-data">
+                <DataAnnotationsValidator />
+                <div class="form-group">
+                    <label>Product Name:</label>
+                    <InputText @bind-Value="newProduct.Name" class="form-control" />
+                    <ValidationMessage For="@(() => newProduct.Name)" />
+                </div>
+                <div class="form-group">
+                    <label>Price ($):</label>
+                    <InputNumber @bind-Value="newProduct.Price" class="form-control" />
+                    <ValidationMessage For="@(() => newProduct.Price)" />
+                </div>
+                <div class="form-group">
+                    <label>Quantity:</label>
+                    <InputNumber @bind-Value="newProduct.Quantity" class="form-control" />
+                    <ValidationMessage For="@(() => newProduct.Quantity)" />
+                </div>
+                <div class="form-group">
+                    <label>Product Image:</label>
+                    <InputFile OnChange="HandleFileUpload" class="form-control" />
+                    @if (!string.IsNullOrEmpty(newProduct.Image))
+                    {
+                        <div class="image-preview">
+                            <img src="@newProduct.Image" alt="Preview" style="max-width: 100px; max-height: 100px;" />
+                        </div>
+                    }
+                </div>
+                <button type="submit" class="btn btn-primary" disabled="@isAddingProduct">
+                    @(isAddingProduct ? "Adding..." : "Add Product")
+                </button>
+            </EditForm>
+        </div>
+
+        <div class="my-products">
+            <h4>My Products (@products.Count)</h4>
+            @if (products.Any())
+            {
+                <div class="product-grid">
+                    @foreach (var product in products)
+                    {
+                        <div class="seller-product-card">
+                            <div class="product-image-container">
+                                <img src="@product.Image" alt="@product.Name" class="product-image" />
+                            </div>
+                            <div class="product-details">
+                                <h5>@product.Name</h5>
+                                <p><strong>Price:</strong> $@product.Price.ToString("N2")</p>
+                                <p><strong>Stock:</strong> @product.Quantity</p>
+                                <div class="product-actions">
+                                    <button class="btn btn-danger" @onclick="() => DeleteProduct(product.Id)" 
+                                            disabled="@isDeletingProduct">
+                                        @(isDeletingProduct ? "Deleting..." : "Delete")
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="no-products">
+                    <p>You don't have any products yet.</p>
+                </div>
+            }
+        </div>
+    </div>
+}
+else if (UserService.CurrentUser!.Role == "Buyer")
+{
+    <div class="buyer-dashboard">
+        <h3>Welcome, @UserService.CurrentUser.Username (Buyer)</h3>
+        
+        <div class="cart-section">
+            <h4>Your Shopping Cart (@UserService.CurrentUser.Cart.Count items)</h4>
+            @if (UserService.CurrentUser.Cart.Any())
+            {
+                <div class="cart-items-container">
+                    <table class="cart-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Subtotal</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in UserService.CurrentUser.Cart)
+                            {
+                                <tr class="cart-item">
+                                    <td>
+                                        <div class="cart-product-info">
+                                            <img src="@item.Image" alt="@item.Name" class="cart-product-image" />
+                                            <span>@item.Name</span>
+                                        </div>
+                                    </td>
+                                    <td>$@item.Price.ToString("N2")</td>
+                                    <td>@item.Quantity</td>
+                                    <td>$@((item.Price * item.Quantity).ToString("N2"))</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-remove" @onclick="() => RemoveFromCart(item)">
+                                            <i class="fas fa-trash-alt"></i> Remove
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    
+                    <div class="cart-summary">
+                        <div class="cart-total">
+                            <h5>Total: $@CalculateTotal().ToString("N2")</h5>
+                        </div>
+                        
+                        <button class="btn btn-primary btn-purchase" @onclick="CompletePurchase" 
+                                disabled="@isProcessingPurchase">
+                            @(isProcessingPurchase ? "Processing..." : "Complete Purchase")
+                        </button>
+                    </div>
+                    
+                    @if (showPurchaseMessage)
+                    {
+                        <div class="alert alert-success purchase-message">
+                            <i class="fas fa-check-circle"></i> Thank you for your purchase! Your order has been placed.
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-cart">
+                    <p>Your cart is empty.</p>
+                    <a href="/products" class="btn btn-primary">Browse Products</a>
+                </div>
+            }
+        </div>
+        
+        <div class="purchase-history">
+            <h4>Purchase History</h4>
+            @if (UserService.CurrentUser.PurchaseHistory.Any())
+            {
+                <div class="history-items">
+                    @foreach (var purchase in UserService.CurrentUser.PurchaseHistory.OrderByDescending(p => p.Date))
+                    {
+                        <div class="history-item card">
+                            <div class="card-header">
+                                <strong>Order Date:</strong> @purchase.Date.ToString("f")
+                                <span class="float-right"><strong>Total:</strong> $@purchase.Total.ToString("N2")</span>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group">
+                                    @foreach (var item in purchase.PurchaseItems)
+                                    {
+                                        <li class="list-group-item">
+                                            <div class="d-flex justify-content-between">
+                                                <span>@item.Product.Name x @item.Quantity</span>
+                                                <span>$@((item.Product.Price * item.Quantity).ToString("N2"))</span>
+                                            </div>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="no-history">
+                    <p>No purchase history yet.</p>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<Footer />
+
+@code {
+    private ProductModel newProduct = new();
+    private List<ProductModel> products = new();
+    private bool showPurchaseMessage = false;
+    private bool isAddingProduct = false;
+    private bool isDeletingProduct = false;
+    private bool isProcessingPurchase = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (UserService.CurrentUser?.Role == "Seller")
+        {
+            await LoadSellerProducts();
+        }
+    }
+
+    private async Task LoadSellerProducts()
+    {
+        products = await ProductService.GetProductsByUserAsync(UserService.CurrentUser!.Username);
+    }
+
+    private async Task HandleFileUpload(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            try
+            {
+                var imageUrl = await ProductService.UploadProductImage(file);
+                newProduct.Image = imageUrl;
+            }
+            catch (Exception ex)
+            {
+               
+                Console.WriteLine($"Error uploading image: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task AddProduct()
+    {
+        isAddingProduct = true;
+        try
+        {
+            newProduct.SellerUsername = UserService.CurrentUser!.Username;
+            await ProductService.AddProductAsync(newProduct);
+            await LoadSellerProducts();
+            newProduct = new();
+        }
+        finally
+        {
+            isAddingProduct = false;
+        }
+    }
+
+    private async Task DeleteProduct(int id)
+    {
+        isDeletingProduct = true;
+        try
+        {
+            await ProductService.DeleteProductAsync(id);
+            await LoadSellerProducts();
+        }
+        finally
+        {
+            isDeletingProduct = false;
+        }
+    }
+
+    private decimal CalculateTotal()
+    {
+        return UserService.CurrentUser!.Cart.Sum(item => item.Price * item.Quantity);
+    }
+
+    private void RemoveFromCart(ProductModel item)
+    {
+        UserService.CurrentUser!.Cart.Remove(item);
+    }
+
+   private async Task CompletePurchase()
+{
+    isProcessingPurchase = true;
+    try
+    {
+        if (UserService.CurrentUser!.Cart.Any())
+        {
+            var newPurchase = new Purchase
+            {
+                Date = DateTime.UtcNow,
+                Total = CalculateTotal(),
+                UserId = UserService.CurrentUser.Id,
+                PurchaseItems = UserService.CurrentUser.Cart
+                    .Select(item => new PurchaseItem 
+                    {
+                        ProductId = item.Id,
+                        Quantity = item.Quantity,
+                        UnitPrice = item.Price
+                    }).ToList()
+            };
+
+            await ProductService.UpdateInventoryAfterPurchase(UserService.CurrentUser.Cart);
+            UserService.CurrentUser.AddPurchase(UserService.CurrentUser.Cart);
+            UserService.CurrentUser.Cart.Clear();
+            
+            showPurchaseMessage = true;
+            await Task.Delay(5000);
+            showPurchaseMessage = false;
+        }
+    }
+    finally
+    {
+        isProcessingPurchase = false;
+    }
+}
+}

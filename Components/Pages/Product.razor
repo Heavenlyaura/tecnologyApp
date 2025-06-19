@@ -1,0 +1,112 @@
+@page "/products"
+@using tecnologyApp.Data
+@using tecnologyApp.Components.Layout
+@using ProductModel = tecnologyApp.Data.Product
+@inject tecnologyApp.Services.IProductService ProductService
+@inject tecnologyApp.Services.IUserService UserService
+
+
+<PageTitle>TechStore Pro - Products</PageTitle>
+
+<Header />
+
+<div class="products-container">
+    <div class="products-header">
+        <h3>Available Products</h3>
+        <div class="view-options">
+            <button @onclick="@(() => ChangeView("grid"))" class="view-btn @(currentView == "grid" ? "active" : "")">
+                Grid View
+            </button>
+            <button @onclick="@(() => ChangeView("list"))" class="view-btn @(currentView == "list" ? "active" : "")">
+                List View
+            </button>
+        </div>
+    </div>
+
+    @if (products is null)
+    {
+        <p class="loading-message">Loading products...</p>
+    }
+    else if (!products.Any())
+    {
+        <p class="no-products">No products available.</p>
+    }
+    else
+    {
+        <div class="@($"product-container {currentView}")">
+            @foreach (var product in products)
+            {
+                <div class="product-card">
+                    <img src="@product.Image" alt="@product.Name" />
+                    <div class="product-info">
+                        <h5>@product.Name</h5>
+                        <p class="price">$@product.Price.ToString("N2")</p>
+                        <p class="stock">Available: @product.Quantity</p>
+                        <p class="seller">Seller: @product.SellerUsername</p>
+                        @if (UserService.CurrentUser?.Role == "Buyer")
+                        {
+                            <div class="quantity-selector">
+                                <button @onclick="() => DecreaseQuantity(product)" class="quantity-btn">-</button>
+                                <span class="quantity">@(product.QuantityToBuy == 0 ? 1 : product.QuantityToBuy)</span>
+                                <button @onclick="() => IncreaseQuantity(product)" class="quantity-btn">+</button>
+                            </div>
+                            @if (product.QuantityToBuy > product.Quantity)
+                            {
+                                <p class="stock-warning">You have exceeded available stock!</p>
+                            }
+                            <button @onclick="() => AddToCart(product)" 
+                                    class="btn btn-add" 
+                                    disabled="@(product.QuantityToBuy <= 0 || product.QuantityToBuy > product.Quantity)">
+                                Add to Cart
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<Footer />
+
+@code {
+    private List<ProductModel> products = new();
+    private string currentView = "grid";
+
+    protected override async Task OnInitializedAsync()
+    {
+        products = (await ProductService.GetAllProductsAsync()).Select(p => 
+        {
+            p.QuantityToBuy = 1; // Default quantity
+            return p;
+        }).ToList();
+    }
+
+    private void AddToCart(ProductModel product)
+    {
+        var productToAdd = product.Clone();
+        productToAdd.Quantity = product.QuantityToBuy;
+        UserService.CurrentUser!.Cart.Add(productToAdd);
+        product.QuantityToBuy = 1; // Reset quantity
+    }
+
+    private void IncreaseQuantity(ProductModel product)
+    {
+        product.QuantityToBuy++;
+        StateHasChanged();
+    }
+
+    private void DecreaseQuantity(ProductModel product)
+    {
+        if (product.QuantityToBuy > 1)
+        {
+            product.QuantityToBuy--;
+            StateHasChanged();
+        }
+    }
+
+    private void ChangeView(string viewType)
+    {
+        currentView = viewType;
+    }
+}

@@ -1,0 +1,34 @@
+﻿@inherits LayoutComponentBase
+
+
+<div class="page">
+    @Body
+</div>
+
+<div id="blazor-error-ui">
+    Environment: @Environment
+    <environment include="Staging,Production">
+        An error has occurred. This application may no longer respond until reloaded.
+    </environment>
+    <environment include="Development">
+        An unhandled exception has occurred. See browser dev tools for details.
+    </environment>
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+@code
+ 
+{
+
+    
+private
+ 
+string
+ Environment 
+=>
+ 
+"Development"
+;
+
+}

@@ -1,0 +1,60 @@
+@page "/login"
+@using tecnologyApp.Components.Layout
+@using tecnologyApp.Services
+@using tecnologyApp.Data
+@inject IUserService UserService
+@inject NavigationManager Navigation
+
+<PageTitle>Login</PageTitle>
+<Header />
+
+<div class="login-container">
+    <div class="login-form">
+        <h3>Login</h3>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div>
+                <label>Username:</label>
+                <InputText @bind-Value="loginModel.Username" class="form-control" />
+            </div>
+            <div>
+                <label>Password:</label>
+                <InputText @bind-Value="loginModel.Password" type="password" class="form-control" />
+            </div>
+
+            <button type="submit" class="btn btn-primary">Login</button>
+        </EditForm>
+
+        <p class="register-link">
+            Don't have an account? <a href="/register">Register here</a>
+        </p>
+    </div>
+</div>
+
+<Footer />
+
+@code {
+    private LoginModel loginModel = new();
+    private string? errorMessage;
+
+    private async Task HandleLogin()
+    {
+        var result = await UserService.LoginAsync(loginModel);
+        if (result.Success)
+        {
+            Navigation.NavigateTo("/dashboard");
+        }
+        else
+        {
+            errorMessage = result.Message;
+        }
+    }
+}

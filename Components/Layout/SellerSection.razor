@@ -1,0 +1,53 @@
+<section id="sellers" class="sellers-section"> 
+<div class="container"> 
+<h3 class="section-title">Our Sales Team</h3> 
+<p class="section-subtitle">Expert professionals ready to help you</p> 
+
+<div class="sellers-grid"> 
+@foreach (var seller in sellers) 
+{ 
+<div class="seller-card"> 
+<img src="@seller.ImageUrl" alt="@seller.Name" class="seller-image" /> 
+<h4 class="seller-name">@seller.Name</h4> 
+<p class="seller-role">@seller.Role</p> 
+<p class="seller-description">@seller.Description</p> 
+</div> 
+} 
+</div> 
+</div>
+</section>
+
+@code { 
+private List<Seller> sellers = new()
+{
+new Seller
+{
+Name = "Ana García",
+Role = "Laptop Specialist",
+Description = "5 years of experience helping you find the perfect laptop for every need.",
+ImageUrl = "images/sabrina.webp"
+},
+new Seller
+{
+Name = "Carlos Ruiz",
+Role = "Smartphone Expert",
+Description = "Know all the latest trends in mobile technology and accessories.",
+ImageUrl = "images/jose.webp"
+},
+new Seller
+{
+Name = "María López",
+Role = "Tech Consultant",
+Description = "Helps you choose the best technology for your home or office.",
+ImageUrl = "images/monica.webp"
+}
+};
+
+public class Seller
+{
+public string Name { get; set; } = string. Empty;
+public string Role { get; set; } = string. Empty;
+public string Description { get; set; } = string.Empty; 
+public string ImageUrl { get; set; } = string.Empty; 
+}
+}

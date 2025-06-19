@@ -1,0 +1,30 @@
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<section class="hero">
+    <div class="hero-overlay">
+        <div class="container">
+            <div class="hero-content">
+                <h2 class="hero-title">The Best Technology of the Future</h2>
+                <p class="hero-subtitle">Discover the latest tech products with top quality and competitive prices</p>
+                <div class="hero-buttons">
+                    <button class="btn-primary" @onclick="NavigateToProducts">View Products</button>
+                    <button class="btn-secondary" @onclick="ShowMoreInfo">More Information</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private void NavigateToProducts()
+    {
+        Navigation.NavigateTo("/products");
+    }
+
+    private async Task ShowMoreInfo()
+    {
+        
+        await JS.InvokeVoidAsync("scrollToSection", "sellers");
+    }
+}
